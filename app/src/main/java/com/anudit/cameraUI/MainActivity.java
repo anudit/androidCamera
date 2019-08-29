@@ -42,9 +42,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+
 public class MainActivity extends AppCompatActivity {
 
     private TextView tvCapture;
+    private TextView tvLog;
     private TextureView textureView;
 
     //Check state orientation of output image
@@ -106,6 +108,18 @@ public class MainActivity extends AppCompatActivity {
                 takePicture();
             }
         });
+
+        tvLog = (TextView) findViewById(R.id.tvLog);
+        tvLog.setText("Controlled");
+    }
+
+    public String sendPicture(String file_path) throws IOException{
+        String requestURL = "http://ruve.pythonanywhere.com/test";
+        MultipartUtility multipart = new MultipartUtility(requestURL);
+        multipart.addFilePart("file_param_1", new File(file_path));
+        String response = multipart.finish();
+        tvLog.setText(response);
+        return response;
     }
 
     private void takePicture() {
@@ -140,7 +154,9 @@ public class MainActivity extends AppCompatActivity {
             int rotation = getWindowManager().getDefaultDisplay().getRotation();
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION,ORIENTATIONS.get(rotation));
 
-            file = new File(Environment.getExternalStorageDirectory()+"/"+UUID.randomUUID().toString()+".jpg");
+            final String fn = Environment.getExternalStorageDirectory()+"/"+UUID.randomUUID().toString()+".jpg";
+            file = new File(fn);
+            tvLog.setText(fn);
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
                 @Override
                 public void onImageAvailable(ImageReader imageReader) {
@@ -151,7 +167,6 @@ public class MainActivity extends AppCompatActivity {
                         byte[] bytes = new byte[buffer.capacity()];
                         buffer.get(bytes);
                         save(bytes);
-
                     }
                     catch (FileNotFoundException e)
                     {
@@ -174,8 +189,9 @@ public class MainActivity extends AppCompatActivity {
                         outputStream = new FileOutputStream(file);
                         outputStream.write(bytes);
                     }finally {
-                        if(outputStream != null)
+                        if(outputStream != null){
                             outputStream.close();
+                        }
                     }
                 }
             };
@@ -187,6 +203,7 @@ public class MainActivity extends AppCompatActivity {
                     super.onCaptureCompleted(session, request, result);
                     Toast.makeText(MainActivity.this, "Saved "+file, Toast.LENGTH_SHORT).show();
                     createCameraPreview();
+
                 }
             };
 
@@ -205,7 +222,6 @@ public class MainActivity extends AppCompatActivity {
 
                 }
             },mBackgroundHandler);
-
 
         } catch (CameraAccessException e) {
             e.printStackTrace();
